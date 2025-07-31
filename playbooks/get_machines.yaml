@@ -1,0 +1,71 @@
+---
+- name: 获取 MAAS 机器信息并按状态和 zone 分类展示
+  hosts: localhost
+  gather_facts: false
+  vars_files:
+    - ../vars/auth_vars.yaml
+
+  tasks:
+
+    - name: 构建 oauth_header
+      set_fact:
+        oauth_header: OAuth oauth_version="1.0",oauth_signature_method="PLAINTEXT",oauth_consumer_key="{{ oauth_consumer_key }}",oauth_token="{{ oauth_token }}",oauth_signature="&{{ oauth_token_secret }}",oauth_nonce="{{ lookup('pipe', 'uuidgen') }}",oauth_timestamp="{{ lookup('pipe', 'date +%s') }}"
+
+
+    - name: 获取 MAAS 机器信息
+      uri:
+        url: "{{ maas_url }}api/2.0/machines/"
+        method: GET
+        headers:
+          Authorization: "{{ oauth_header }}"
+        return_content: yes
+      register: maas_machines_raw
+
+    - name: 提取机器列表
+      set_fact:
+        maas_machines: "{{ maas_machines_raw.json }}"
+
+    - name: 按状态和 zone 分组构造结构
+      set_fact:
+          grouped_machines: "{{ grouped_machines | default({}) | combine({
+              (item.status_name): (
+                (grouped_machines[item.status_name] | default({})) | combine({
+                  (item.zone.name | default('default')): (
+                    (grouped_machines[item.status_name][item.zone.name | default('default')] | default([])) + [item]
+                  )
+                })
+              )
+            }, recursive=True) }}"
+      loop: "{{ maas_machines }}"
+      no_log: true
+
+    - name: 准备主机表格标题
+      set_fact:
+        table_lines:
+          - "主机名            IP地址             状态      区域           池        操作系统"
+
+    - name: 组装表格内容
+      set_fact:
+        table_lines: >-
+          {{ table_lines + [
+              '%-18s %-18s %-10s %-14s %-10s %-10s' % (
+                item.fqdn,
+                (item.ip_addresses | select('search', '^[0-9]') | list | first) | default('-'),
+                item.status_name | default('-'),
+                item.zone.name | default('-'),
+                item.pool.name | default('-'),
+                item.distro_series | default('-')
+              )
+            ]
+          }}
+      loop: "{{ maas_machines }}"
+      loop_control:
+        label: "{{ item.fqdn }}"
+
+    - name: 以多行字符串打印表格
+      shell: echo "{{ table_lines | join('\n') }}"
+      register: echo_result
+
+    - name: 打印机器信息表格
+      debug:
+        msg: "{{ echo_result.stdout_lines }}"

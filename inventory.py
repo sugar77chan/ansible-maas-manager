@@ -5,6 +5,7 @@ import json
 import yaml
 from requests_oauthlib import OAuth1Session
 
+
 # 自动查找 all.yaml 的路径（优先 group_vars，再 vars）
 def load_config():
     base_dir = os.path.dirname(__file__)
@@ -14,6 +15,7 @@ def load_config():
             with open(full_path, 'r') as f:
                 return yaml.safe_load(f)
     raise FileNotFoundError("未找到 group_vars/all.yaml 或 vars/all.yaml")
+
 
 # 加载配置
 config = load_config()
@@ -28,11 +30,13 @@ session = OAuth1Session(
     resource_owner_secret=token_secret
 )
 
+
 def get_machines(resource_type):
     url = f"{MAAS_URL}api/2.0/{resource_type}/"
     resp = session.get(url)
     resp.raise_for_status()
     return resp.json()
+
 
 def get_os_mapping():
     return {
@@ -45,6 +49,7 @@ def get_os_mapping():
         "noble": "ubuntu24"
     }
 
+
 def build_inventory(machines):
     os_mapping = get_os_mapping()
     inventory = {
@@ -54,12 +59,9 @@ def build_inventory(machines):
     }
 
     for machine in machines:
-        if machine['node_type_name'] == "Rack controller":
-            ansible_user = "hans"
-            group_name = "rack_controllers"
-        elif machine['node_type_name'] == "Region controller":
-            ansible_user = "hans"
-            group_name = "region_controllers"
+        if "Region" or "Rack" in machine['node_type_name']:
+            ansible_user = "ubuntu"
+            group_name = "controllers"
         elif machine['status_name'] == 'Ready':
             group_name = "ready_machines"
             ansible_user = "ubuntu"
@@ -84,16 +86,17 @@ def build_inventory(machines):
             inventory[group_name] = {
                 'hosts': []
             }
-
-        inventory[group_name]['hosts'].append(hostname)
-        inventory['_meta']['hostvars'][hostname] = {
-            'ansible_user': ansible_user,
-            'system_id': machine.get('system_id'),
-            'hostname': machine.get('hostname'),
-            'ansible_ssh_host': ip_address
-        }
+        if hostname not in inventory[group_name]["hosts"]:
+            inventory[group_name]['hosts'].append(hostname)
+            inventory['_meta']['hostvars'][hostname] = {
+                'ansible_user': ansible_user,
+                'system_id': machine.get('system_id'),
+                'hostname': machine.get('hostname'),
+                'ansible_ssh_host': ip_address
+            }
 
     return inventory
+
 
 def main():
     if len(sys.argv) == 2 and sys.argv[1] == "--list":
@@ -104,6 +107,7 @@ def main():
         print(json.dumps(inventory, indent=2))
     else:
         print(json.dumps({}))
+
 
 if __name__ == "__main__":
     main()

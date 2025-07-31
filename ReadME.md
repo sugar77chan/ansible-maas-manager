@@ -10,7 +10,7 @@ pip3 install -r requirements.txt
 
 ### 2.向maas中添加机器
 ```shell
-ansible-playbook playbooks/add_machines.yml -e "hostname=client02 mac_address=00:0c:29:4a:cb:ab ip_address=192.168.157.36"
+ansible-playbook playbooks/add_machine.yaml -e "hostname=maas02 mac_address=00:0C:29:18:9D:4C ip_address=192.168.157.250"
 ```
 执行如上命令可以将机器裸金属添加到maas平台，并且将设置的ip和mac地址做静态dhcp绑定，因此在后续使用过程中机器状态发生变化也能分配相同的ip地址，确保机器全生命周期内ip、主机名、mac绑定关系的唯一性。
 
