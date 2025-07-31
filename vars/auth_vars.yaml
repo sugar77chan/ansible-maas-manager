@@ -1,0 +1,5 @@
+# vars/auth_vars.yaml
+api_key_parts: "{{ api_key.split(':') }}"
+oauth_consumer_key: "{{ api_key_parts[0] }}"
+oauth_token: "{{ api_key_parts[1] }}"
+oauth_token_secret: "{{ api_key_parts[2] }}"

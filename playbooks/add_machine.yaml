@@ -1,0 +1,84 @@
+# playbooks/add_machine.yaml
+- name: Create MAAS machine and configure MAC, IP, zone, and pool
+  hosts: localhost
+  gather_facts: false
+
+  vars_files:
+    - ../vars/auth_vars.yaml
+    - ../vars/add_machine_vars.yaml
+
+  pre_tasks:
+    - name: Check if required variables are provided
+      fail:
+        msg: >
+          Missing required variables. You must provide 'hostname', 'mac_address', and 'ip_address'
+          using '-e' or in an external vars file.
+      when: hostname is not defined or mac_address is not defined or ip_address is not defined
+
+  tasks:
+    - name: Create a new machine
+      uri:
+        url: "{{ maas_url }}api/2.0/machines/"
+        method: POST
+        body_format: form-multipart
+        body:
+          architecture: "amd64"
+          power_type: "{{ power_type }}"
+          power_parameters: "{{ power_parameters }}"
+          hostname: "{{ hostname }}"
+          mac_addresses: "{{ mac_address }}"
+        status_code: 200
+        return_content: yes
+        headers:
+          Authorization: >
+            OAuth oauth_version="1.0",
+            oauth_signature_method="PLAINTEXT",
+            oauth_consumer_key="{{ oauth_consumer_key }}",
+            oauth_token="{{ oauth_token }}",
+            oauth_signature="&{{ oauth_token_secret }}",
+            oauth_nonce="{{ lookup('pipe', 'uuidgen') }}",
+            oauth_timestamp="{{ lookup('pipe', 'date +%s') }}"
+      register: machine_created
+
+    - name: Extract system_id
+      set_fact:
+        system_id: "{{ machine_created.json.system_id }}"
+
+    - name: Set zone and pool after machine creation
+      uri:
+        url: "{{ maas_url }}api/2.0/machines/{{ system_id }}/"
+        method: PUT
+        body_format: form-multipart
+        body:
+          zone: "{{ zone }}"
+          pool: "{{ pool }}"
+        status_code: 200
+        headers:
+          Authorization: >
+            OAuth oauth_version="1.0",
+            oauth_signature_method="PLAINTEXT",
+            oauth_consumer_key="{{ oauth_consumer_key }}",
+            oauth_token="{{ oauth_token }}",
+            oauth_signature="&{{ oauth_token_secret }}",
+            oauth_nonce="{{ lookup('pipe', 'uuidgen') }}",
+            oauth_timestamp="{{ lookup('pipe', 'date +%s') }}"
+
+    - name: Assign static IP to interface
+      uri:
+        url: "{{ maas_url }}api/2.0/reservedips/"
+        method: POST
+        body_format: form-multipart
+        body:
+          ip: "{{ ip_address }}"
+          mac_address: "{{ mac_address }}"
+          comment: "{{ hostname }}"
+        status_code: 200
+        headers:
+          Authorization: >
+            OAuth oauth_version="1.0",
+            oauth_signature_method="PLAINTEXT",
+            oauth_consumer_key="{{ oauth_consumer_key }}",
+            oauth_token="{{ oauth_token }}",
+            oauth_signature="&{{ oauth_token_secret }}",
+            oauth_nonce="{{ lookup('pipe', 'uuidgen') }}",
+            oauth_timestamp="{{ lookup('pipe', 'date +%s') }}"
