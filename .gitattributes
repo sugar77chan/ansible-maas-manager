@@ -1,0 +1,2 @@
+*.yaml linguist-documentation=false
+*.yml linguist-documentation=false

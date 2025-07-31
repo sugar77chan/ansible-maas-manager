@@ -19,3 +19,9 @@ playbook添加机器的电源模式为manual，可以在使用时候根据需求
 a.在执行添加机器之前需配置好机器的ipmi、virsh、pve等相关信息；
 b.机器只有一张网卡启用了pxe功能；
 c、预先知道启用了pxe网卡的mac地址，预先规划了机器的主机名；
+
+### 3.从maas中获取机器列表
+```shell
+ansible-playbook  playbooks/get_machines.yaml
+```
+执行如上命令可获取maas中所有机器的列表，并且按照区域和状态进行分组，显示主机fqdn、ip地址、状态、区域、池、操作系统等信息
