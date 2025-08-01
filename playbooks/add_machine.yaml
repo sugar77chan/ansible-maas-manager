@@ -15,6 +15,19 @@
       when: hostname is not defined or mac_address is not defined or ip_address is not defined
 
   tasks:
+    - name: 查询是否存在同名主机
+      uri:
+        url: "{{ maas_url }}api/2.0/machines/?hostname={{ hostname }}"
+        method: GET
+        headers:
+          Authorization: "{{ oauth_header }}"
+        return_content: yes
+      register: existing_host_resp
+
+    - name: 设置变量：host_exists
+      set_fact:
+        host_exists: "{{ existing_host_resp.json | length > 0 }}"
+
     - name: 添加主机
       uri:
         url: "{{ maas_url }}api/2.0/machines/"
@@ -30,11 +43,13 @@
         return_content: yes
         headers:
           Authorization: "{{ oauth_header }}"
-        register: machine_created
+      register: machine_created
+      when: not host_exists
 
     - name: 获取主机的system_id
       set_fact:
         system_id: "{{ machine_created.json.system_id }}"
+      when: not host_exists
 
     - name: 设置zone和pool
       uri:
@@ -47,6 +62,25 @@
         status_code: 200
         headers:
           Authorization: "{{ oauth_header }}"
+      when: not host_exists
+
+    - name: 获取 reservedips 信息
+      uri:
+        url: "{{ maas_url }}/api/2.0/reservedips/"
+        method: GET
+        headers:
+          Authorization: "{{ oauth_header }}"
+        return_content: yes
+        status_code: 200
+      register: reservedips_resp
+
+    - name: 判断 IP 是否已被绑定
+      set_fact:
+        ip_exists: "{{ reservedips_resp.json | selectattr('ip', 'equalto', ip_address) | list | length > 0 }}"
+
+    - name: 判断 MAC 是否已被绑定
+      set_fact:
+        mac_exists: "{{ reservedips_resp.json | selectattr('mac_address', 'equalto', mac_address) | list | length > 0 }}"
 
     - name: 设置dhcp静态绑定
       uri:
@@ -60,3 +94,4 @@
         status_code: 200
         headers:
           Authorization: "{{ oauth_header }}"
+      when: not ip_exists or not mac_exists

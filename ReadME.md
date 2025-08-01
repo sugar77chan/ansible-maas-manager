@@ -48,4 +48,13 @@ user_data：      **可选参数**，string类型，默认为空，如需使用�
 #### 使用限制：
 只能对Ready状态和Release状态的机器进行部署，因为maas本身的bug，有时候hostname正确也会报404错误，这个时候建议先对机器执行composing然后再部署，否则可能会出现客户端正常部署完成，但是服务端一直显示部署中。
 
+### 5.修改机器状态
+```shell
+ansible-playbook playbooks/change_machine_status.yaml -e "hostname=client01 target_state=released"
+```
 
+#### 支持的参数包括：
+hostname：       **必要参数**，string类型，要修改的主机
+target_state：   **必要参数**，string类型，要修改的为的状态，支持的值包括locked（op-lock）、unlocked（op-unlock）、broken（op-mark_broken)、fixed（op-mark_fixed）、 released（op-release）、commissioning（op-commission）、rescue_mode（op-rescue_mode）、exit_rescue（op-exit_rescue_mode）、power_on（op-power_on）、power_off（op-power_off）
+
+#### 如果机器部署为kvm状态，释放时会报错，某些状态间不允许直接切换，自行阅读官方文档

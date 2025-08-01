@@ -1,5 +1,5 @@
-pool: bare
-zone: local_zone
+pool: kvm
+zone: client
 
 power_type: manual
 power_parameters: "{}"
