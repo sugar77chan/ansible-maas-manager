@@ -32,3 +32,20 @@ ansible-playbook  playbooks/get_machine_info.yaml -e hostname=maas02
 ```
 打印的信息包括主机名、状态、IP地址、系统、区域、池、CPU、内存、磁盘、MAC地址、启动方式、主板厂商、主板型号、系统厂商等
 
+
+
+### 4.给指定机器部署操作系统
+```shell
+ansible-playbook playbooks/deploy_os.yaml -e "hostname=maas02 os=24.04"
+```
+#### 支持的参数包括：
+hostname：       **必要参数**，string类型，要部署的主机名称
+os：             **必要参数**，string类型，部署的操作系统,举例说明，如果要部署Jammy Jellyfish使用：**ubuntu/jammy, jammy and ubuntu/22.04, 22.04**
+install_rack:   **可选参数**，bool类型，默认false，设置为true时会安装rack组件
+install_kvm:    **可选参数**，bool类型，默认false，设置为true时会安装KVM组件
+install_vmhost: **可选参数**，bool类型，默认false，设置为true时会按照LXD组件
+user_data：      **可选参数**，string类型，默认为空，如需使用，指定user_data文件路径即可。
+#### 使用限制：
+只能对Ready状态和Release状态的机器进行部署，因为maas本身的bug，有时候hostname正确也会报404错误，这个时候建议先对机器执行composing然后再部署，否则可能会出现客户端正常部署完成，但是服务端一直显示部署中。
+
+

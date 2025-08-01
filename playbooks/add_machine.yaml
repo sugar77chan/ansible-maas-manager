@@ -19,7 +19,7 @@
       uri:
         url: "{{ maas_url }}api/2.0/machines/"
         method: POST
-        body_format: json
+        body_format: form-urlencoded
         body:
           architecture: "amd64"
           power_type: "{{ power_type }}"
@@ -40,7 +40,7 @@
       uri:
         url: "{{ maas_url }}api/2.0/machines/{{ system_id }}/"
         method: PUT
-        body_format: json
+        body_format: form-urlencoded
         body:
           zone: "{{ zone }}"
           pool: "{{ pool }}"
@@ -52,7 +52,7 @@
       uri:
         url: "{{ maas_url }}api/2.0/reservedips/"
         method: POST
-        body_format: json
+        body_format: form-urlencoded
         body:
           ip: "{{ ip_address }}"
           mac_address: "{{ mac_address }}"
