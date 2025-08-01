@@ -25,3 +25,10 @@ c、预先知道启用了pxe网卡的mac地址，预先规划了机器的主机�
 ansible-playbook  playbooks/get_machines.yaml
 ```
 执行如上命令可获取maas中所有机器的列表，并且按照区域和状态进行分组，显示主机fqdn、ip地址、状态、区域、池、操作系统等信息
+
+### 4.获取指定机器的信息
+```shell
+ansible-playbook  playbooks/get_machine_info.yaml -e hostname=maas02
+```
+打印的信息包括主机名、状态、IP地址、系统、区域、池、CPU、内存、磁盘、MAC地址、启动方式、主板厂商、主板型号、系统厂商等
+

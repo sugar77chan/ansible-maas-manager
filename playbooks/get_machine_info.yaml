@@ -1,0 +1,47 @@
+- name: Create MAAS machine and configure MAC, IP, zone, and pool
+  hosts: localhost
+  gather_facts: false
+  vars_files:
+    - ../vars/auth_vars.yaml
+  pre_tasks:
+    - name: 检查hostname是否定义
+      fail:
+        msg: >
+          必须要hostname变量，请使用-e指定或者在其他变量文件中指定
+      when: hostname is not defined
+  tasks:
+    - name: 获取指定主机名的机器信息
+      uri:
+        url: "{{ maas_url }}api/2.0/machines/?hostname={{ hostname }}"
+        method: GET
+        headers:
+          Authorization: "{{ oauth_header }}"
+        return_content: yes
+      register: machine_info_resp
+    - name: 解析机器信息
+      set_fact:
+        machine_info: "{{ machine_info_resp.json[0] }}"
+
+    - name: 格式化构造机器详情信息
+      set_fact:
+        machine_summary: |
+          主机信息
+          ----------------------------
+          主机名     : {{ machine_info.hostname | default('未知') }}
+          状态       : {{ machine_info.status_name | default('未知') }}
+          IP地址     : {{ machine_info.ip_addresses[0] | default('未知') }}
+          系统       : {{ machine_info.osystem | default('未知') }}
+          区域       : {{ machine_info.zone.name | default('未知') }}
+          池         : {{ machine_info.pool.name | default('未知') }}
+          CPU        : {{ machine_info.cpu_count | default('?') }} 核心 @ {{ machine_info.cpu_speed | default('?') }} MHz
+          内存       : {{ (machine_info.memory | default(0)) }} MB
+          磁盘       : {{ '%.2f' | format((machine_info.storage | float)) }} GB
+          MAC地址    : {{ machine_info.boot_interface.mac_address | default('未知') }}
+          启动方式   : {{ machine_info.bios_boot_method | default('未知') }}
+          主板厂商   : {{ machine_info.hardware_info.mainboard_vendor | default('未知') }}
+          主板型号   : {{ machine_info.hardware_info.mainboard_product | default('未知') }}
+          系统厂商   : {{ machine_info.hardware_info.system_vendor | default('未知') }}
+    - name: 打印机器信息
+      debug:
+        msg: "{{  machine_summary.split('\n') }}"
+

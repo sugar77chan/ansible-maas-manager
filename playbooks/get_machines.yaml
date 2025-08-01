@@ -7,11 +7,6 @@
 
   tasks:
 
-    - name: 构建 oauth_header
-      set_fact:
-        oauth_header: OAuth oauth_version="1.0",oauth_signature_method="PLAINTEXT",oauth_consumer_key="{{ oauth_consumer_key }}",oauth_token="{{ oauth_token }}",oauth_signature="&{{ oauth_token_secret }}",oauth_nonce="{{ lookup('pipe', 'uuidgen') }}",oauth_timestamp="{{ lookup('pipe', 'date +%s') }}"
-
-
     - name: 获取 MAAS 机器信息
       uri:
         url: "{{ maas_url }}api/2.0/machines/"

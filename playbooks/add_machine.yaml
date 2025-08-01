@@ -8,19 +8,14 @@
     - ../vars/add_machine_vars.yaml
 
   pre_tasks:
-    - name: Check if required variables are provided
+    - name: 检查变量是否定义
       fail:
         msg: >
-          Missing required variables. You must provide 'hostname', 'mac_address', and 'ip_address'
-          using '-e' or in an external vars file.
+          必须提供 'hostname', 'mac_address', and 'ip_address'，请使用-e指定或者在其他变量文件中指定
       when: hostname is not defined or mac_address is not defined or ip_address is not defined
 
   tasks:
-    - name: 构建 oauth_header
-      set_fact:
-        oauth_header: OAuth oauth_version="1.0",oauth_signature_method="PLAINTEXT",oauth_consumer_key="{{ oauth_consumer_key }}",oauth_token="{{ oauth_token }}",oauth_signature="&{{ oauth_token_secret }}",oauth_nonce="{{ lookup('pipe', 'uuidgen') }}",oauth_timestamp="{{ lookup('pipe', 'date +%s') }}"
-
-    - name: Create a new machine
+    - name: 添加主机
       uri:
         url: "{{ maas_url }}api/2.0/machines/"
         method: POST
@@ -37,11 +32,11 @@
           Authorization: "{{ oauth_header }}"
         register: machine_created
 
-    - name: Extract system_id
+    - name: 获取主机的system_id
       set_fact:
         system_id: "{{ machine_created.json.system_id }}"
 
-    - name: Set zone and pool after machine creation
+    - name: 设置zone和pool
       uri:
         url: "{{ maas_url }}api/2.0/machines/{{ system_id }}/"
         method: PUT
@@ -53,7 +48,7 @@
         headers:
           Authorization: "{{ oauth_header }}"
 
-    - name: Assign static IP to interface
+    - name: 设置dhcp静态绑定
       uri:
         url: "{{ maas_url }}api/2.0/reservedips/"
         method: POST
