@@ -1,0 +1,41 @@
+- name: Change machine status in MAAS
+  hosts: localhost
+  gather_facts: false
+  vars_files:
+    - ../vars/auth_vars.yaml
+
+  pre_tasks:
+    - name: 检查必传参数 hostname
+      fail:
+        msg: "参数 hostname 必须传入"
+      when: hostname is not defined or hostname == ""
+
+  tasks:
+    - name: 获取主机信息
+      uri:
+        url: "{{ maas_url }}api/2.0/machines/?hostname={{ hostname }}"
+        method: GET
+        headers:
+          Authorization: "{{ oauth_header }}"
+        return_content: yes
+      register: machine_info_resp
+
+    - name: 提取主机信息
+      set_fact:
+        machine_info: "{{ machine_info_resp.json[0] }}"
+      when: machine_info_resp.json | length > 0
+
+    - name: 检查主机是否存在
+      fail:
+        msg: "主机 {{ hostname }} 在 MAAS 中未找到"
+      when: machine_info_resp.json | length == 0
+
+
+    - name: 发送 DELETE 请求删除机器
+      uri:
+        url: "{{ maas_url }}/api/2.0/machines/{{ machine_info.system_id }}/"
+        method: DELETE
+        headers:
+          Authorization: "{{ oauth_header }}"
+        status_code: 204
+        return_content: yes

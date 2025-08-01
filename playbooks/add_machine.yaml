@@ -94,4 +94,4 @@
         status_code: 200
         headers:
           Authorization: "{{ oauth_header }}"
-      when: not ip_exists or not mac_exists
+      when:  ip_exists or  mac_exists

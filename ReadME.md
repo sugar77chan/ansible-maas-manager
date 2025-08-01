@@ -41,20 +41,44 @@ ansible-playbook playbooks/deploy_os.yaml -e "hostname=maas02 os=24.04"
 #### 支持的参数包括：
 hostname：       **必要参数**，string类型，要部署的主机名称
 os：             **必要参数**，string类型，部署的操作系统,举例说明，如果要部署Jammy Jellyfish使用：**ubuntu/jammy, jammy and ubuntu/22.04, 22.04**
-install_rack:   **可选参数**，bool类型，默认false，设置为true时会安装rack组件
-install_kvm:    **可选参数**，bool类型，默认false，设置为true时会安装KVM组件
-install_vmhost: **可选参数**，bool类型，默认false，设置为true时会按照LXD组件
+install_rack:   **可选参数**，bool类型，默认false，设置为true时会安装rack组件，并自动注册到maas中
+install_kvm:    **可选参数**，bool类型，默认false，设置为true时会安装KVM组件，并自动注册到maas中
+install_vmhost: **可选参数**，bool类型，默认false，设置为true时会按照LXD组件，并自动注册到maas中
 user_data：      **可选参数**，string类型，默认为空，如需使用，指定user_data文件路径即可。
 #### 使用限制：
-只能对Ready状态和Release状态的机器进行部署，因为maas本身的bug，有时候hostname正确也会报404错误，这个时候建议先对机器执行composing然后再部署，否则可能会出现客户端正常部署完成，但是服务端一直显示部署中。
+只能对Ready状态和Release状态的机器进行部署，因为maas本身的bug，有时候hostname正确也会报404错误，这个时候建议先对机器执行commissioning然后再部署，否则可能会出现客户端正常部署完成，但是服务端一直显示部署中。
 
 ### 5.修改机器状态
 ```shell
 ansible-playbook playbooks/change_machine_status.yaml -e "hostname=client01 target_state=released"
 ```
 
+
 #### 支持的参数包括：
 hostname：       **必要参数**，string类型，要修改的主机
 target_state：   **必要参数**，string类型，要修改的为的状态，支持的值包括locked（op-lock）、unlocked（op-unlock）、broken（op-mark_broken)、fixed（op-mark_fixed）、 released（op-release）、commissioning（op-commission）、rescue_mode（op-rescue_mode）、exit_rescue（op-exit_rescue_mode）、power_on（op-power_on）、power_off（op-power_off）
 
-#### 如果机器部署为kvm状态，释放时会报错，某些状态间不允许直接切换，自行阅读官方文档
+#### 注意事项 
+如果机器部署为kvm状态，释放时会报错，某些状态间不允许直接切换，自行阅读官方文档
+
+### 6.删除机器
+```shell
+ansible-playbook playbooks/change_machine_status.yaml -e "hostname=client01"
+```
+#### 支持的参数
+hostname:    **必要参数**， string类型，指定要从maas中删除的主机
+
+## 注意事项
+本项目通过 Ansible 调用 MAAS API，与 Web 界面操作具有同等效果。
+
+若使用 sudo 切换用户运行脚本，请确保正确传递环境变量（推荐 sudo -E 或直接登录用户环境）。
+
+## 贡献说明
+欢迎提交 PR 或 Issue！使用建议、功能请求、Bug 反馈都很有价值。
+
+## License
+本项目采用 MIT 许可证，详见 LICENSE 文件。
+
+如果你需要，我还可以帮你生成 .gitignore、LICENSE 文件，或者把这个 README 渲染成 GitHub 风格页面截图。如果现在可以了，建议你可以直接把这份内容命名为 README.md 上传到 GitHub 仓库中。是否需要我帮你生成最终文件？
+
+
