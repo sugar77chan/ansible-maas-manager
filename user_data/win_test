@@ -1,0 +1,5 @@
+#cloud-config
+users:
+  - name: administrator
+    passwd: 'P@ssw0rd123!'
+    inactive: false

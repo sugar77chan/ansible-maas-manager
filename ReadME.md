@@ -12,7 +12,7 @@ pip3 install -r requirements.txt
 ```shell
 ansible-playbook playbooks/add_machine.yaml -e "hostname=maas02 mac_address=00:0C:29:18:9D:4C ip_address=192.168.157.250"
 ```
-执行如上命令可以将机器裸金属添加到maas平台，并且将设置的ip和mac地址做静态dhcp绑定，因此在后续使用过程中机器状态发生变化也能分配相同的ip地址，确保机器全生命周期内ip、主机名、mac绑定关系的唯一性。
+执行如上命令可以将机器裸金属添加到maas平台，并且设定了所在pool和zone
 
 playbook添加机器的电源模式为manual，可以在使用时候根据需求改成相应的模式，并增加相应的模式的参数。默认机器添加后所在的zone为local_zone、pool为，bare，可以根据需求修改变量
 **前置条件**
@@ -45,6 +45,10 @@ install_rack:   **可选参数**，bool类型，默认false，设置为true时�
 install_kvm:    **可选参数**，bool类型，默认false，设置为true时会安装KVM组件，并自动注册到maas中
 install_vmhost: **可选参数**，bool类型，默认false，设置为true时会按照LXD组件，并自动注册到maas中
 user_data：      **可选参数**，string类型，默认为空，如需使用，指定user_data文件路径即可。
+
+> 注意事项：
+> 1、除了ubuntu相应的值，我目前只用到了**windows10**这个值，这是部署windows10操作系统的
+> 2、如果使用packer-maas制作windows镜像，在部署时候前往要注意传递user_data,因为默认情况下制作镜像时的adminiistrator用户会被禁用，cloudbase-init会创建一个admin的用户作为管理员，但是设置的密码是maas随机设置的，又因为windows没有ssh服务，不会传递ssh密钥给用户，所以如果不传递user_data去做配置的话会导致没有可用的用户。
 #### 使用限制：
 只能对Ready状态和Release状态的机器进行部署，因为maas本身的bug，有时候hostname正确也会报404错误，这个时候建议先对机器执行commissioning然后再部署，否则可能会出现客户端正常部署完成，但是服务端一直显示部署中。
 

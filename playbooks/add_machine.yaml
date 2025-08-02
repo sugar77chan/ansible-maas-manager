@@ -63,35 +63,3 @@
         headers:
           Authorization: "{{ oauth_header }}"
       when: not host_exists
-
-    - name: 获取 reservedips 信息
-      uri:
-        url: "{{ maas_url }}/api/2.0/reservedips/"
-        method: GET
-        headers:
-          Authorization: "{{ oauth_header }}"
-        return_content: yes
-        status_code: 200
-      register: reservedips_resp
-
-    - name: 判断 IP 是否已被绑定
-      set_fact:
-        ip_exists: "{{ reservedips_resp.json | selectattr('ip', 'equalto', ip_address) | list | length > 0 }}"
-
-    - name: 判断 MAC 是否已被绑定
-      set_fact:
-        mac_exists: "{{ reservedips_resp.json | selectattr('mac_address', 'equalto', mac_address) | list | length > 0 }}"
-
-    - name: 设置dhcp静态绑定
-      uri:
-        url: "{{ maas_url }}api/2.0/reservedips/"
-        method: POST
-        body_format: form-urlencoded
-        body:
-          ip: "{{ ip_address }}"
-          mac_address: "{{ mac_address }}"
-          comment: "{{ hostname }}"
-        status_code: 200
-        headers:
-          Authorization: "{{ oauth_header }}"
-      when:  ip_exists or  mac_exists

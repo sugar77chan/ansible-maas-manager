@@ -26,8 +26,10 @@
     - name: 如果传入 user_data 文件路径，读取并 Base64 编码
       when: user_data != ""
       set_fact:
-        user_data: "{{ lookup('file', user_data) | b64encode }}"
-
+        user_data_b64: "{{ lookup('file', playbook_dir + '/../user_data/' + user_data) | b64encode }}"
+    - name: 检查user_data的值
+      debug:
+        msg: "{{ user_data_b64 }}"
   tasks:
     - name: 获取主机信息
       uri:
@@ -66,7 +68,7 @@
           install_kvm: "{{ install_kvm }}"
           install_rackd: "{{ install_rackd }}"
           register_vmhost: "{{ register_vmhost }}"
-          user_data: "{{ user_data }}"
+          user_data: "{{ user_data_b64 }}"
       register: deploy_resp
       failed_when: false
 
